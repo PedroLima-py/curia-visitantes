@@ -1,11 +1,13 @@
 // Verifica se o supabase já foi declarado globalmente
 if (typeof window._supabase === 'undefined') {
-    // Configuração do Supabase
+    // Configuração do Supabase com a nova chave publishable
     const supabaseUrl = 'https://rkqbjgbctamlrwkceiob.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrcWJqZ2JjdGFtbHJ3a2NlaW9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDQyOTMsImV4cCI6MjA4NzYyMDI5M30.MtNP3-F38-t63tGxBz0biFCGCWG6fxmXWWzMBtZEZJs';
+    const supabaseKey = 'sb_publishable_pWBLvfOwFB4sjeL4mDZy_A_ziMgkTfW';
     
     // Cria o cliente Supabase e guarda no window para evitar duplicidade
     window._supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    console.log('✅ Supabase configurado com nova chave publishable');
 }
 
 // Usa a instância global
@@ -40,11 +42,16 @@ const supabase = window._supabase;
         };
 
         // Verifica elementos essenciais
+        const elementosFaltando = [];
         for (const [key, element] of Object.entries(elements)) {
             if (!element && key !== 'btnText' && key !== 'btnLoader') {
-                console.error(`❌ Elemento não encontrado: ${key}`);
-                return;
+                elementosFaltando.push(key);
             }
+        }
+        
+        if (elementosFaltando.length > 0) {
+            console.error('❌ Elementos não encontrados:', elementosFaltando);
+            return;
         }
 
         // Lista de setores com emojis
@@ -77,6 +84,36 @@ const supabase = window._supabase;
                 cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
             }
             return cpf;
+        }
+
+        // Função para validar CPF (cálculo dos dígitos verificadores)
+        function validarCPF(cpf) {
+            cpf = cpf.replace(/\D/g, '');
+            
+            if (cpf.length !== 11) return false;
+            
+            // Verifica se todos os dígitos são iguais (CPF inválido)
+            if (/^(\d)\1+$/.test(cpf)) return false;
+            
+            // Validação do primeiro dígito verificador
+            let soma = 0;
+            for (let i = 0; i < 9; i++) {
+                soma += parseInt(cpf.charAt(i)) * (10 - i);
+            }
+            let resto = 11 - (soma % 11);
+            let digito1 = (resto === 10 || resto === 11) ? 0 : resto;
+            
+            if (digito1 !== parseInt(cpf.charAt(9))) return false;
+            
+            // Validação do segundo dígito verificador
+            soma = 0;
+            for (let i = 0; i < 10; i++) {
+                soma += parseInt(cpf.charAt(i)) * (11 - i);
+            }
+            resto = 11 - (soma % 11);
+            let digito2 = (resto === 10 || resto === 11) ? 0 : resto;
+            
+            return digito2 === parseInt(cpf.charAt(10));
         }
 
         // Formata CPF enquanto digita
@@ -155,7 +192,7 @@ const supabase = window._supabase;
             } catch (error) {
                 console.error('Erro ao carregar registros:', error);
                 if (elements.corpoTabela) {
-                    elements.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #dc3545;">❌ Erro ao carregar registros</td></tr>';
+                    elements.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #dc3545;">❌ Erro ao carregar registros: ' + error.message + '</td></tr>';
                 }
             }
         }
@@ -182,11 +219,6 @@ const supabase = window._supabase;
             if (elements.nomeInput) elements.nomeInput.focus();
         }
 
-        // Valida CPF
-        function validarCPF(cpf) {
-            return cpf.replace(/\D/g, '').length === 11;
-        }
-
         // Evento de submit
         if (elements.form) {
             elements.form.addEventListener('submit', async (e) => {
@@ -209,8 +241,10 @@ const supabase = window._supabase;
                     // Validações
                     if (!formData.nome) throw new Error('Por favor, digite o nome do visitante');
                     if (!formData.cpf) throw new Error('Por favor, digite o CPF');
-                    if (!validarCPF(formData.cpf)) throw new Error('CPF deve ter 11 dígitos');
+                    if (!validarCPF(formData.cpf)) throw new Error('CPF inválido');
                     if (!formData.setor) throw new Error('Selecione um setor de destino');
+                    
+                    console.log('📤 Enviando dados:', formData);
                     
                     // Insere no banco
                     const { data, error } = await supabase
@@ -219,6 +253,7 @@ const supabase = window._supabase;
                         .select();
 
                     if (error) {
+                        console.error('Erro do Supabase:', error);
                         if (error.message.includes('relation')) {
                             throw new Error('Tabela não encontrada. Execute o SQL de configuração no Supabase.');
                         }
@@ -228,13 +263,15 @@ const supabase = window._supabase;
                         throw error;
                     }
                     
+                    console.log('✅ Dados inseridos:', data);
+                    
                     // Sucesso
                     mostrarMensagem(`✅ Registro de ${formData.nome} realizado com sucesso!`, 'sucesso');
                     resetForm();
                     await carregarRegistros();
                     
                 } catch (error) {
-                    console.error('Erro:', error);
+                    console.error('❌ Erro:', error);
                     mostrarMensagem(`❌ ${error.message}`, 'erro');
                 } finally {
                     // Restaura botão
@@ -262,6 +299,23 @@ const supabase = window._supabase;
             });
         }
 
+        if (elements.setorSelect) {
+            elements.setorSelect.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter' && elements.setorSelect.value) {
+                    if (elements.observacaoInput) elements.observacaoInput.focus();
+                }
+            });
+        }
+
+        if (elements.observacaoInput) {
+            elements.observacaoInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (elements.btnSalvar) elements.btnSalvar.click();
+                }
+            });
+        }
+
         // Inicializa
         carregarRegistros();
         if (elements.nomeInput) elements.nomeInput.focus();
@@ -269,6 +323,6 @@ const supabase = window._supabase;
         // Recarrega registros a cada 30 segundos
         setInterval(carregarRegistros, 30000);
 
-        console.log('✅ Sistema pronto para uso!');
+        console.log('✅ Sistema pronto para uso com nova chave publishable!');
     }
 })();
