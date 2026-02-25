@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cúria Metropolitana de Brasília - Registro de Visitantes</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Importando uma fonte bonita e moderna do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <!-- Área da logo. Você precisará baixar a imagem e colocar na pasta como 'logo.png' -->
+            <img src="logo.png" alt="Logo Cúria Metropolitana de Brasília" class="logo" onerror="this.style.display='none'">
+            <h1>Cúria Metropolitana de Brasília</h1>
+            <p class="subtitle">Sistema de Registro de Entrada de Visitantes</p>
+        </header>
+
+        <main>
+            <form id="formCadastro">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="nome">Nome Completo *</label>
+                        <input type="text" id="nome" name="nome" required placeholder="Digite o nome completo">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cpf">CPF *</label>
+                        <input type="text" id="cpf" name="cpf" required placeholder="000.000.000-00" maxlength="14">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="setor">Setor de Destino *</label>
+                                <select id="setor" name="setor" required>
+                                <option value="">Selecione um setor</option>
+                                <option value="Gabinete Episcopal">Gabinete Episcopal</option>
+                                <option value="Chancelaria">Chancelaria</option>
+                                <option value="Tribunal Eclesiástico">Tribunal Eclesiástico</option>
+                                <option value="Coordenação de Pastoral">Coordenação de Pastoral</option>
+                                <option value="Comunicação/Imprensa">Comunicação/Imprensa</option>
+                                <option value="Administração">Administração</option>
+                                <option value="Contabilidade">Contabilidade</option>
+                                <option value="Tesouraria">Tesouraria</option>
+                                <option value="Economato">Economato</option>
+                                <option value="Gestão de Pessoas">Gestão de Pessoas</option>
+                                <option value="Jurídico (COVAC)">Jurídico (COVAC)</option>
+                                <option value="Tecnologia da Informação">Tecnologia da Informação</option>
+                                <option value="Patrimônio">Patrimônio</option>
+                                <option value="Infraestrutura">Infraestrutura</option>
+                                <option value="Secretaria dos MESCE">Secretaria dos MESCE</option>
+                                <option value="Banheiro">Banheiro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="observacao">Observação</label>
+                        <textarea id="observacao" name="observacao" rows="3" placeholder="Cidade de origem, motivo da visita, observações..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Esta div exibirá a data e hora atuais -->
+                <div class="datetime-display">
+                    <span id="dataAtual"></span> - <span id="horaAtual"></span>
+                </div>
+
+                <button type="submit" id="btnSalvar">
+                    <span class="btn-text">Registrar Entrada</span>
+                    <span class="btn-loader" style="display: none;">Registrando...</span>
+                </button>
+            </form>
+
+            <div id="mensagem" class="mensagem" style="display: none;"></div>
+
+            <!-- Área para mostrar os últimos registros (opcional, mas útil) -->
+            <section class="ultimos-registros">
+                <h2>Últimos Registros</h2>
+                <div class="table-responsive">
+                    <table id="tabelaRegistros">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Setor</th>
+                                <th>Observação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            <tr><td colspan="5">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Incluindo a biblioteca do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
+Tribunal Eclesiástico, Tecnologia da Informação, Secretaria dos MESCE, Comunicação/Imprensa, Jurídico (COVAC), Contabilidade, Tesouraria, Economato, Gestão de Pessoas, Coordenação de Pastoral, Administração, Chancelaria, Gabinete Episcopal, Patrimônio, Infraestrutura, Banheiro
