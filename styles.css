@@ -129,7 +129,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
 }
 
-/* Estilo para seleção múltipla de setores */
 .setores-multiplos-container {
     background: var(--cinza-100);
     border: 1.5px solid var(--cinza-200);
@@ -343,6 +342,181 @@ tr:hover td {
     white-space: nowrap;
 }
 
+.consulta-section {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px solid var(--cinza-200);
+}
+
+.consulta-section h2 {
+    color: var(--azul-escuro);
+    margin-bottom: 24px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.consulta-filtros {
+    background: var(--cinza-100);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.filtro-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filtro-group label {
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--cinza-700);
+}
+
+.filtro-group input,
+.filtro-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--cinza-200);
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.filtros-acoes {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-buscar,
+.btn-limpar,
+.btn-exportar {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-buscar {
+    background: var(--azul-escuro);
+    color: white;
+}
+
+.btn-buscar:hover {
+    background: var(--azul-medio);
+}
+
+.btn-limpar {
+    background: var(--cinza-200);
+    color: var(--cinza-800);
+}
+
+.btn-limpar:hover {
+    background: var(--cinza-300);
+}
+
+.btn-exportar {
+    background: var(--verde);
+    color: white;
+}
+
+.btn-exportar:hover {
+    background: #047857;
+}
+
+.resultados-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.resultados-header h3 {
+    color: var(--cinza-800);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.total-registros {
+    color: var(--cinza-600);
+    font-size: 0.9rem;
+    background: var(--cinza-100);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.resultados-paginacao {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-pagina {
+    padding: 8px 12px;
+    border: 1px solid var(--cinza-200);
+    background: white;
+    color: var(--cinza-700);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 40px;
+}
+
+.btn-pagina:hover {
+    background: var(--cinza-100);
+    border-color: var(--cinza-400);
+}
+
+.btn-pagina.ativo {
+    background: var(--azul-escuro);
+    color: white;
+    border-color: var(--azul-escuro);
+}
+
+.btn-pagina:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.estatisticas-rapidas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.estatistica-card {
+    background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.estatistica-card .numero {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.estatistica-card .rotulo {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 @media (max-width: 1024px) {
     .form-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -377,6 +551,20 @@ tr:hover td {
     .btn-adicionar {
         width: 100%;
         padding: 10px;
+    }
+    
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filtros-acoes {
+        flex-direction: column;
+    }
+    
+    .btn-buscar,
+    .btn-limpar,
+    .btn-exportar {
+        width: 100%;
     }
     
     th, td {
