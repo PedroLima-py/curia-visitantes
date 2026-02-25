@@ -1,5 +1,6 @@
+
 (function() {
-    console.log('Inicializando Sistema da Cúria...');
+    console.log('Sistema de Registro Rápido iniciado...');
     
     // Configuração do Supabase
     const SUPABASE_CONFIG = {
@@ -10,12 +11,7 @@
     let supabaseClient = null;
     let elementos = {};
     let setoresSelecionados = [];
-    
-    // Variáveis para consulta
-    let dadosCompletos = [];
-    let dadosFiltrados = [];
-    let paginaAtual = 1;
-    const registrosPorPagina = 15;
+    let timeoutBusca = null;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', iniciar);
@@ -28,7 +24,6 @@
             // Inicializa Supabase
             if (typeof window.supabase === 'undefined') {
                 console.error('Biblioteca do Supabase não carregada');
-                mostrarErroCritico('Erro ao carregar bibliotecas. Verifique sua conexão.');
                 return;
             }
 
@@ -36,7 +31,6 @@
             
             // Captura elementos
             elementos = {
-                // Formulário
                 form: document.getElementById('formCadastro'),
                 btnSalvar: document.getElementById('btnSalvar'),
                 mensagemDiv: document.getElementById('mensagem'),
@@ -45,7 +39,6 @@
                 corpoTabela: document.getElementById('corpoTabela'),
                 nomeInput: document.getElementById('nome'),
                 cpfInput: document.getElementById('cpf'),
-                documentoInput: document.getElementById('documento'),
                 setorSelector: document.getElementById('setorSelector'),
                 btnAdicionarSetor: document.getElementById('btnAdicionarSetor'),
                 setoresSelecionadosDiv: document.getElementById('setoresSelecionados'),
@@ -54,54 +47,30 @@
                 btnText: document.querySelector('.btn-text'),
                 btnLoader: document.querySelector('.btn-loader'),
                 
-                // Consulta
-                btnBuscar: document.getElementById('btnBuscar'),
-                btnLimpar: document.getElementById('btnLimparFiltros'),
-                btnExportar: document.getElementById('btnExportar'),
-                buscaNome: document.getElementById('buscaNome'),
-                buscaCPF: document.getElementById('buscaCPF'),
-                buscaSetor: document.getElementById('buscaSetor'),
-                buscaDataInicio: document.getElementById('buscaDataInicio'),
-                buscaDataFim: document.getElementById('buscaDataFim'),
-                corpoTabelaConsulta: document.getElementById('corpoTabelaConsulta'),
-                totalRegistros: document.getElementById('totalRegistros'),
-                paginacao: document.getElementById('paginacao')
+                // Elementos de busca rápida
+                buscaRapida: document.getElementById('buscaRapida'),
+                btnBuscarRapido: document.getElementById('btnBuscarRapido'),
+                btnLimparBusca: document.getElementById('btnLimparBusca'),
+                resultadoBusca: document.getElementById('resultadoBusca')
             };
-
-            // Verifica elementos obrigatórios
-            const obrigatorios = ['form', 'btnSalvar', 'nomeInput', 'cpfInput', 'setoresHidden'];
-            const faltando = obrigatorios.filter(id => !elementos[id]);
-            
-            if (faltando.length > 0) {
-                console.error('Elementos faltando:', faltando);
-                return;
-            }
 
             // Configurações
             configurarFormatacaoCPF();
             configurarDataHora();
             configurarSelecaoSetores();
+            configurarBuscaRapida();
             configurarEventos();
-            configurarConsulta();
             
-            // Carrega dados
-            carregarRegistros();
-            carregarDadosConsulta();
-            carregarEstatisticas();
+            // Carrega últimos registros
+            carregarUltimosRegistros();
             
             // Foco inicial
-            if (elementos.nomeInput) elementos.nomeInput.focus();
+            if (elementos.buscaRapida) elementos.buscaRapida.focus();
             
-            console.log('Sistema pronto!');
+            console.log('Sistema pronto para uso rápido!');
             
         } catch (error) {
             console.error('Erro na inicialização:', error);
-        }
-    }
-
-    function mostrarErroCritico(mensagem) {
-        if (elementos.corpoTabela) {
-            elementos.corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #DC2626;">${mensagem}</td></tr>`;
         }
     }
 
@@ -119,21 +88,6 @@
             }
             e.target.value = value;
         });
-        
-        // Formata CPF no campo de busca
-        if (elementos.buscaCPF) {
-            elementos.buscaCPF.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length > 11) value = value.slice(0, 11);
-                
-                if (value.length <= 11) {
-                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-                }
-                e.target.value = value;
-            });
-        }
     }
 
     function configurarDataHora() {
@@ -217,14 +171,150 @@
         window.removerSetor = removerSetor;
     }
 
-    function validarCPF(cpf) {
-        cpf = cpf.replace(/\D/g, '');
-        if (cpf.length !== 11) return false;
-        if (/^(\d)\1+$/.test(cpf)) return false;
-        return true;
+    function configurarBuscaRapida() {
+        if (!elementos.buscaRapida || !elementos.btnBuscarRapido) return;
+
+        // Busca ao digitar (com debounce)
+        elementos.buscaRapida.addEventListener('input', () => {
+            clearTimeout(timeoutBusca);
+            timeoutBusca = setTimeout(realizarBuscaRapida, 500);
+        });
+
+        // Busca ao clicar no botão
+        elementos.btnBuscarRapido.addEventListener('click', realizarBuscaRapida);
+
+        // Busca ao pressionar Enter
+        elementos.buscaRapida.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                realizarBuscaRapida();
+            }
+        });
+
+        // Limpar busca
+        if (elementos.btnLimparBusca) {
+            elementos.btnLimparBusca.addEventListener('click', limparBusca);
+        }
+
+        // Fechar resultados ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!elementos.resultadoBusca.contains(e.target) && 
+                !elementos.buscaRapida.contains(e.target) && 
+                !elementos.btnBuscarRapido.contains(e.target)) {
+                elementos.resultadoBusca.style.display = 'none';
+            }
+        });
     }
 
-    async function carregarRegistros() {
+    async function realizarBuscaRapida() {
+        const termo = elementos.buscaRapida.value.trim();
+        if (!termo || !supabaseClient) return;
+
+        try {
+            let query = supabaseClient
+                .from('visitantes')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            // Busca por nome ou CPF
+            if (termo.replace(/\D/g, '').length >= 11) {
+                // É CPF
+                const cpfLimpo = termo.replace(/\D/g, '');
+                query = query.eq('cpf', cpfLimpo);
+            } else {
+                // É nome
+                query = query.ilike('nome', `%${termo.toUpperCase()}%`);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            exibirResultadosBusca(data);
+
+        } catch (error) {
+            console.error('Erro na busca:', error);
+            elementos.resultadoBusca.innerHTML = '<div class="resultado-item" style="color: var(--vermelho);">Erro ao buscar. Tente novamente.</div>';
+            elementos.resultadoBusca.style.display = 'block';
+        }
+    }
+
+    function exibirResultadosBusca(resultados) {
+        if (!elementos.resultadoBusca) return;
+
+        if (!resultados || resultados.length === 0) {
+            elementos.resultadoBusca.innerHTML = '<div class="resultado-item" style="color: var(--cinza-600);">Nenhum visitante encontrado</div>';
+            elementos.resultadoBusca.style.display = 'block';
+            return;
+        }
+
+        const html = resultados.map(visitante => {
+            const ultimaVisita = new Date(visitante.created_at).toLocaleDateString('pt-BR');
+            return `
+                <div class="resultado-item" onclick="window.copiarDados('${visitante.id}')">
+                    <div class="resultado-info">
+                        <div class="resultado-nome">${visitante.nome}</div>
+                        <div class="resultado-cpf">${visitante.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</div>
+                        <div class="resultado-ultima">Última visita: ${ultimaVisita}</div>
+                    </div>
+                    <span class="resultado-badge">Copiar</span>
+                </div>
+            `;
+        }).join('');
+
+        elementos.resultadoBusca.innerHTML = html;
+        elementos.resultadoBusca.style.display = 'block';
+
+        // Função global para copiar dados
+        window.copiarDados = async (id) => {
+            const visitante = resultados.find(v => v.id === id);
+            if (visitante) {
+                copiarParaFormulario(visitante);
+                elementos.resultadoBusca.style.display = 'none';
+                elementos.buscaRapida.value = '';
+                mostrarNotificacao('Dados copiados com sucesso!');
+            }
+        };
+    }
+
+    function copiarParaFormulario(visitante) {
+        // Copia nome e CPF
+        if (elementos.nomeInput) elementos.nomeInput.value = visitante.nome;
+        if (elementos.cpfInput) {
+            const cpfFormatado = visitante.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            elementos.cpfInput.value = cpfFormatado;
+        }
+        
+        // Limpa setores anteriores
+        setoresSelecionados = [];
+        atualizarInterfaceSetores();
+        
+        // Foco no seletor de setores
+        if (elementos.setorSelector) elementos.setorSelector.focus();
+        
+        // Rola até o formulário
+        elementos.form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function limparBusca() {
+        if (elementos.buscaRapida) elementos.buscaRapida.value = '';
+        if (elementos.resultadoBusca) elementos.resultadoBusca.style.display = 'none';
+        if (elementos.nomeInput) elementos.nomeInput.focus();
+    }
+
+    function mostrarNotificacao(mensagem) {
+        const notificacao = document.createElement('div');
+        notificacao.className = 'copiado-indicator';
+        notificacao.textContent = mensagem;
+        document.body.appendChild(notificacao);
+        
+        setTimeout(() => {
+            notificacao.remove();
+        }, 3000);
+    }
+
+    async function carregarUltimosRegistros() {
         if (!elementos.corpoTabela || !supabaseClient) return;
         
         try {
@@ -232,7 +322,7 @@
                 .from('visitantes')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(20);
+                .limit(10);
 
             if (error) throw error;
 
@@ -257,17 +347,38 @@
                             <td><strong>${item.nome}</strong></td>
                             <td>${item.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</td>
                             <td><div class="setores-list">${setoresHtml}</div></td>
-                            <td>${item.observacao || '-'}</td>
+                            <td>
+                                <button class="btn-copiar" onclick="window.copiarDadosTabela('${item.id}')">
+                                    Copiar
+                                </button>
+                            </td>
                         </tr>
                     `;
                 }).join('');
+
+                // Função para copiar da tabela
+                window.copiarDadosTabela = async (id) => {
+                    const item = data.find(v => v.id === id);
+                    if (item) {
+                        copiarParaFormulario(item);
+                        mostrarNotificacao('Dados copiados da tabela!');
+                    }
+                };
+
             } else {
                 elementos.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Nenhum registro encontrado</td></tr>';
             }
         } catch (error) {
             console.error('Erro ao carregar:', error);
-            elementos.corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #DC2626;">Erro ao carregar registros</td></tr>`;
+            elementos.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--vermelho);">Erro ao carregar registros</td></tr>';
         }
+    }
+
+    function validarCPF(cpf) {
+        cpf = cpf.replace(/\D/g, '');
+        if (cpf.length !== 11) return false;
+        if (/^(\d)\1+$/.test(cpf)) return false;
+        return true;
     }
 
     function mostrarMensagem(texto, tipo) {
@@ -297,7 +408,6 @@
             const dados = {
                 nome: elementos.nomeInput ? elementos.nomeInput.value.trim().toUpperCase() : '',
                 cpf: elementos.cpfInput ? elementos.cpfInput.value.replace(/\D/g, '') : '',
-                documento: elementos.documentoInput ? elementos.documentoInput.value.trim() || null : null,
                 setor: elementos.setoresHidden ? elementos.setoresHidden.value : '[]',
                 observacao: elementos.observacaoInput ? elementos.observacaoInput.value.trim() || null : null
             };
@@ -316,20 +426,22 @@
 
                 if (error) throw error;
                 
-                mostrarMensagem(`Registro de ${dados.nome} realizado com sucesso`, 'sucesso');
+                mostrarMensagem(`Registro de ${dados.nome} realizado!`, 'sucesso');
                 
-                elementos.form.reset();
+                // Limpa formulário mas mantém nome e CPF se vieram de cópia
                 setoresSelecionados = [];
                 atualizarInterfaceSetores();
-                if (elementos.nomeInput) elementos.nomeInput.focus();
+                if (elementos.observacaoInput) elementos.observacaoInput.value = '';
                 
-                await carregarRegistros();
-                await carregarDadosConsulta();
-                await carregarEstatisticas();
+                // Foco no seletor de setores para o próximo registro
+                if (elementos.setorSelector) elementos.setorSelector.focus();
+                
+                // Recarrega últimos registros
+                await carregarUltimosRegistros();
                 
             } catch (error) {
                 console.error('Erro:', error);
-                mostrarMensagem(error.message, 'erro');
+                mostrarMensagem(`${error.message}`, 'erro');
             } finally {
                 elementos.btnSalvar.disabled = false;
                 if (elementos.btnText) elementos.btnText.style.display = 'inline';
@@ -338,292 +450,9 @@
         });
     }
 
-    // ===== FUNÇÕES DE CONSULTA =====
-
-    function configurarConsulta() {
-        if (elementos.btnBuscar) elementos.btnBuscar.addEventListener('click', realizarBusca);
-        if (elementos.btnLimpar) elementos.btnLimpar.addEventListener('click', limparFiltros);
-        if (elementos.btnExportar) elementos.btnExportar.addEventListener('click', exportarCSV);
-    }
-
-    async function carregarDadosConsulta() {
-        if (!supabaseClient) return;
-        
-        try {
-            const { data, error } = await supabaseClient
-                .from('visitantes')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            
-            dadosCompletos = data || [];
-            return dadosCompletos;
-        } catch (error) {
-            console.error('Erro ao carregar dados para consulta:', error);
-            return [];
-        }
-    }
-
-    async function realizarBusca() {
-        if (!elementos.corpoTabelaConsulta) return;
-        
-        elementos.corpoTabelaConsulta.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">🔍 Buscando...</td></tr>';
-        
-        if (dadosCompletos.length === 0) {
-            await carregarDadosConsulta();
-        }
-        
-        const filtroNome = elementos.buscaNome?.value.toLowerCase() || '';
-        const filtroCPF = elementos.buscaCPF?.value.replace(/\D/g, '') || '';
-        const filtroSetor = elementos.buscaSetor?.value || '';
-        const filtroDataInicio = elementos.buscaDataInicio?.value;
-        const filtroDataFim = elementos.buscaDataFim?.value;
-        
-        dadosFiltrados = dadosCompletos.filter(item => {
-            if (filtroNome && !item.nome.toLowerCase().includes(filtroNome)) {
-                return false;
-            }
-            
-            if (filtroCPF && item.cpf !== filtroCPF) {
-                return false;
-            }
-            
-            if (filtroSetor) {
-                let setoresItem = [];
-                try {
-                    setoresItem = JSON.parse(item.setor);
-                } catch {
-                    setoresItem = [item.setor];
-                }
-                
-                if (!setoresItem.includes(filtroSetor) && item.setor !== filtroSetor) {
-                    return false;
-                }
-            }
-            
-            if (filtroDataInicio || filtroDataFim) {
-                const dataItem = new Date(item.created_at).setHours(0, 0, 0, 0);
-                
-                if (filtroDataInicio) {
-                    const dataInicio = new Date(filtroDataInicio).setHours(0, 0, 0, 0);
-                    if (dataItem < dataInicio) return false;
-                }
-                
-                if (filtroDataFim) {
-                    const dataFim = new Date(filtroDataFim).setHours(23, 59, 59, 999);
-                    if (dataItem > dataFim) return false;
-                }
-            }
-            
-            return true;
-        });
-        
-        if (elementos.totalRegistros) {
-            elementos.totalRegistros.textContent = `${dadosFiltrados.length} registro${dadosFiltrados.length !== 1 ? 's' : ''} encontrado${dadosFiltrados.length !== 1 ? 's' : ''}`;
-        }
-        
-        paginaAtual = 1;
-        exibirPaginaAtual();
-    }
-
-    function exibirPaginaAtual() {
-        if (!elementos.corpoTabelaConsulta) return;
-        
-        if (dadosFiltrados.length === 0) {
-            elementos.corpoTabelaConsulta.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Nenhum registro encontrado com os filtros aplicados</td></tr>';
-            if (elementos.paginacao) elementos.paginacao.innerHTML = '';
-            return;
-        }
-        
-        const inicio = (paginaAtual - 1) * registrosPorPagina;
-        const fim = inicio + registrosPorPagina;
-        const dadosPagina = dadosFiltrados.slice(inicio, fim);
-        
-        elementos.corpoTabelaConsulta.innerHTML = dadosPagina.map(item => {
-            const dataVisita = new Date(item.created_at);
-            let setores = [];
-            
-            try {
-                setores = JSON.parse(item.setor);
-            } catch {
-                setores = [item.setor];
-            }
-            
-            const setoresHtml = Array.isArray(setores) 
-                ? setores.map(s => `<span class="setor-badge">${s}</span>`).join('')
-                : `<span class="setor-badge">${item.setor}</span>`;
-            
-            return `
-                <tr>
-                    <td>${dataVisita.toLocaleDateString('pt-BR')}<br><small>${dataVisita.toLocaleTimeString('pt-BR')}</small></td>
-                    <td><strong>${item.nome}</strong></td>
-                    <td>${item.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</td>
-                    <td>${item.documento || '-'}</td>
-                    <td><div class="setores-list">${setoresHtml}</div></td>
-                    <td>${item.observacao || '-'}</td>
-                </tr>
-            `;
-        }).join('');
-        
-        gerarPaginacao();
-    }
-
-    function gerarPaginacao() {
-        if (!elementos.paginacao) return;
-        
-        const totalPaginas = Math.ceil(dadosFiltrados.length / registrosPorPagina);
-        
-        if (totalPaginas <= 1) {
-            elementos.paginacao.innerHTML = '';
-            return;
-        }
-        
-        let html = '';
-        
-        html += `<button class="btn-pagina" onclick="window.mudarPagina(${paginaAtual - 1})" ${paginaAtual === 1 ? 'disabled' : ''}>‹</button>`;
-        
-        for (let i = 1; i <= totalPaginas; i++) {
-            if (
-                i === 1 || 
-                i === totalPaginas || 
-                (i >= paginaAtual - 2 && i <= paginaAtual + 2)
-            ) {
-                html += `<button class="btn-pagina ${i === paginaAtual ? 'ativo' : ''}" onclick="window.mudarPagina(${i})">${i}</button>`;
-            } else if (i === paginaAtual - 3 || i === paginaAtual + 3) {
-                html += `<span class="btn-pagina" style="border: none; background: none;">...</span>`;
-            }
-        }
-        
-        html += `<button class="btn-pagina" onclick="window.mudarPagina(${paginaAtual + 1})" ${paginaAtual === totalPaginas ? 'disabled' : ''}>›</button>`;
-        
-        elementos.paginacao.innerHTML = html;
-        
-        window.mudarPagina = function(novaPagina) {
-            paginaAtual = novaPagina;
-            exibirPaginaAtual();
-        };
-    }
-
-    function limparFiltros() {
-        if (elementos.buscaNome) elementos.buscaNome.value = '';
-        if (elementos.buscaCPF) elementos.buscaCPF.value = '';
-        if (elementos.buscaSetor) elementos.buscaSetor.value = '';
-        if (elementos.buscaDataInicio) elementos.buscaDataInicio.value = '';
-        if (elementos.buscaDataFim) elementos.buscaDataFim.value = '';
-        
-        dadosFiltrados = [...dadosCompletos];
-        paginaAtual = 1;
-        
-        if (elementos.totalRegistros) {
-            elementos.totalRegistros.textContent = `${dadosFiltrados.length} registro${dadosFiltrados.length !== 1 ? 's' : ''} encontrado${dadosFiltrados.length !== 1 ? 's' : ''}`;
-        }
-        
-        exibirPaginaAtual();
-    }
-
-    function exportarCSV() {
-        if (dadosFiltrados.length === 0) {
-            alert('Nenhum dado para exportar');
-            return;
-        }
-        
-        const cabecalhos = ['Data', 'Hora', 'Nome', 'CPF', 'Documento', 'Setores', 'Observação'];
-        
-        const linhas = dadosFiltrados.map(item => {
-            const data = new Date(item.created_at);
-            let setores = [];
-            
-            try {
-                setores = JSON.parse(item.setor);
-            } catch {
-                setores = [item.setor];
-            }
-            
-            return [
-                data.toLocaleDateString('pt-BR'),
-                data.toLocaleTimeString('pt-BR'),
-                item.nome,
-                item.cpf,
-                item.documento || '',
-                setores.join('; '),
-                item.observacao || ''
-            ];
-        });
-        
-        const csv = [
-            cabecalhos.join(','),
-            ...linhas.map(linha => linha.map(campo => `"${campo}"`).join(','))
-        ].join('\n');
-        
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.href = url;
-        link.download = `visitantes_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
-        link.click();
-        
-        URL.revokeObjectURL(url);
-    }
-
-    async function carregarEstatisticas() {
-        if (!supabaseClient) return;
-        
-        try {
-            const { count: total } = await supabaseClient
-                .from('visitantes')
-                .select('*', { count: 'exact', head: true });
-            
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            
-            const { count: hojeCount } = await supabaseClient
-                .from('visitantes')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', hoje.toISOString());
-            
-            const mes = new Date();
-            mes.setDate(1);
-            mes.setHours(0, 0, 0, 0);
-            
-            const { count: mesCount } = await supabaseClient
-                .from('visitantes')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', mes.toISOString());
-            
-            const statsHtml = `
-                <div class="estatisticas-rapidas">
-                    <div class="estatistica-card">
-                        <div class="numero">${total || 0}</div>
-                        <div class="rotulo">Total de Visitantes</div>
-                    </div>
-                    <div class="estatistica-card">
-                        <div class="numero">${hojeCount || 0}</div>
-                        <div class="rotulo">Hoje</div>
-                    </div>
-                    <div class="estatistica-card">
-                        <div class="numero">${mesCount || 0}</div>
-                        <div class="rotulo">Este Mês</div>
-                    </div>
-                </div>
-            `;
-            
-            const consultaSection = document.querySelector('.consulta-section');
-            if (consultaSection && !document.querySelector('.estatisticas-rapidas')) {
-                consultaSection.insertAdjacentHTML('beforeend', statsHtml);
-            }
-            
-        } catch (error) {
-            console.error('Erro ao carregar estatísticas:', error);
-        }
-    }
-
+    // Recarrega últimos registros a cada 30 segundos
     setInterval(() => {
-        if (supabaseClient) {
-            carregarRegistros();
-            carregarDadosConsulta();
-        }
+        if (supabaseClient) carregarUltimosRegistros();
     }, 30000);
 
 })();
