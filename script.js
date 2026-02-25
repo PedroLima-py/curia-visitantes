@@ -20,10 +20,7 @@
         mensagem: document.getElementById('mensagem'),
         dataSpan: document.getElementById('dataAtual'),
         horaSpan: document.getElementById('horaAtual'),
-        corpoTabela: document.getElementById('corpoTabela'),
-        buscaRapida: document.getElementById('buscaRapida'),
-        btnBuscar: document.getElementById('btnBuscar'),
-        resultadoBusca: document.getElementById('resultadoBusca')
+        corpoTabela: document.getElementById('corpoTabela')
     };
 
     // Estado
@@ -34,7 +31,6 @@
         configurarFormatacaoCPF();
         configurarDataHora();
         configurarSetores();
-        configurarBusca();
         configurarFormulario();
         carregarUltimosRegistros();
         if (elementos.nome) elementos.nome.focus();
@@ -117,75 +113,6 @@
     }
 
     window.removerSetor = removerSetor;
-
-    // Configura busca rápida
-    function configurarBusca() {
-        let timeout;
-        elementos.buscaRapida.addEventListener('input', () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(buscarVisitante, 500);
-        });
-
-        elementos.btnBuscar.addEventListener('click', buscarVisitante);
-        elementos.buscaRapida.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') buscarVisitante();
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!elementos.resultadoBusca.contains(e.target) && e.target !== elementos.buscaRapida) {
-                elementos.resultadoBusca.style.display = 'none';
-            }
-        });
-    }
-
-    async function buscarVisitante() {
-        const termo = elementos.buscaRapida.value.trim();
-        if (!termo) return;
-
-        let query = supabase.from('visitantes').select('*').order('created_at', { ascending: false }).limit(10);
-
-        const cpfLimpo = termo.replace(/\D/g, '');
-        if (cpfLimpo.length === 11) {
-            query = query.eq('cpf', cpfLimpo);
-        } else {
-            query = query.ilike('nome', `%${termo.toUpperCase()}%`);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
-        if (data.length === 0) {
-            elementos.resultadoBusca.innerHTML = '<div class="resultado-item">Nenhum resultado</div>';
-        } else {
-            elementos.resultadoBusca.innerHTML = data.map(v => `
-                <div class="resultado-item" onclick="window.preencherFormulario('${v.id}')">
-                    <div class="resultado-nome">${v.nome}</div>
-                    <div class="resultado-cpf">${v.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</div>
-                </div>
-            `).join('');
-        }
-
-        elementos.resultadoBusca.style.display = 'block';
-
-        window.preencherFormulario = async (id) => {
-            const { data } = await supabase.from('visitantes').select('*').eq('id', id).single();
-            if (data) {
-                elementos.nome.value = data.nome;
-                elementos.cpf.value = data.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                elementos.observacao.value = data.observacao || '';
-                setores = [];
-                renderizarSetores();
-                elementos.resultadoBusca.style.display = 'none';
-                elementos.buscaRapida.value = '';
-                elementos.setorSelector.focus();
-                mostrarMensagem('✅ Dados copiados!', 'sucesso');
-            }
-        };
-    }
 
     // Configura envio do formulário
     function configurarFormulario() {
