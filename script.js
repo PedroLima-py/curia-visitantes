@@ -1,10 +1,6 @@
-// ============================================
-// SISTEMA DA CÚRIA METROPOLITANA DE BRASÍLIA
-// VERSÃO DEFINITIVA - SEM CONFLITOS
-// ============================================
 
 (function() {
-    console.log('🚀 Inicializando Sistema da Cúria...');
+    console.log('Inicializando Sistema da Cúria...');
     
     // Configuração do Supabase
     const SUPABASE_CONFIG = {
@@ -12,11 +8,10 @@
         key: 'sb_publishable_pWBLvfOwFB4sjeL4mDZy_A_ziMgkTfW'
     };
 
-    // Variáveis globais do módulo (protegidas no escopo da função)
     let supabaseClient = null;
     let elementos = {};
+    let setoresSelecionados = [];
 
-    // Inicialização quando o DOM estiver pronto
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', iniciar);
     } else {
@@ -25,17 +20,16 @@
 
     function iniciar() {
         try {
-            // Inicializa Supabase (verifica se a biblioteca está carregada)
+            // Inicializa Supabase
             if (typeof window.supabase === 'undefined') {
-                console.error('�ERRO: Biblioteca do Supabase não carregada!');
-                mostrarErroCritico('Biblioteca do Supabase não carregada. Verifique sua conexão.');
+                console.error('Biblioteca do Supabase não carregada');
+                mostrarErroCritico('Erro ao carregar bibliotecas. Verifique sua conexão.');
                 return;
             }
 
             supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
-            console.log('✅ Supabase client criado');
-
-            // Captura todos os elementos do DOM
+            
+            // Captura elementos
             elementos = {
                 form: document.getElementById('formCadastro'),
                 btnSalvar: document.getElementById('btnSalvar'),
@@ -43,50 +37,49 @@
                 dataSpan: document.getElementById('dataAtual'),
                 horaSpan: document.getElementById('horaAtual'),
                 corpoTabela: document.getElementById('corpoTabela'),
-                cpfInput: document.getElementById('cpf'),
                 nomeInput: document.getElementById('nome'),
-                setorSelect: document.getElementById('setor'),
+                cpfInput: document.getElementById('cpf'),
+                documentoInput: document.getElementById('documento'),
+                setorSelector: document.getElementById('setorSelector'),
+                btnAdicionarSetor: document.getElementById('btnAdicionarSetor'),
+                setoresSelecionadosDiv: document.getElementById('setoresSelecionados'),
+                setoresHidden: document.getElementById('setores'),
                 observacaoInput: document.getElementById('observacao'),
                 btnText: document.querySelector('.btn-text'),
                 btnLoader: document.querySelector('.btn-loader')
             };
 
-            // Verifica elementos críticos
-            const elementosObrigatorios = ['form', 'btnSalvar', 'cpfInput', 'nomeInput', 'setorSelect'];
-            const faltando = elementosObrigatorios.filter(id => !elementos[id]);
+            // Verifica elementos obrigatórios
+            const obrigatorios = ['form', 'btnSalvar', 'nomeInput', 'cpfInput', 'setoresHidden'];
+            const faltando = obrigatorios.filter(id => !elementos[id]);
             
             if (faltando.length > 0) {
-                console.error('❌ Elementos faltando:', faltando);
-                mostrarErroCritico('Erro ao carregar formulário. Atualize a página.');
+                console.error('Elementos faltando:', faltando);
                 return;
             }
 
-            console.log('✅ Elementos carregados', Object.keys(elementos).length);
-
-            // Configurar tudo
+            // Configurações
             configurarFormatacaoCPF();
-            configurarAtualizacaoDataHora();
+            configurarDataHora();
+            configurarSelecaoSetores();
             configurarEventos();
-            configurarAtalhosTeclado();
             
-            // Carregar dados iniciais
+            // Carrega dados
             carregarRegistros();
             
-            // Foco no primeiro campo
+            // Foco inicial
             if (elementos.nomeInput) elementos.nomeInput.focus();
             
-            console.log('✅ Sistema pronto para uso!');
+            console.log('Sistema pronto!');
             
         } catch (error) {
-            console.error('❌ Erro na inicialização:', error);
-            mostrarErroCritico('Erro ao iniciar sistema: ' + error.message);
+            console.error('Erro na inicialização:', error);
         }
     }
 
     function mostrarErroCritico(mensagem) {
-        const corpoTabela = document.getElementById('corpoTabela');
-        if (corpoTabela) {
-            corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #dc3545;">❌ ${mensagem}</td></tr>`;
+        if (elementos.corpoTabela) {
+            elementos.corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #DC2626;">${mensagem}</td></tr>`;
         }
     }
 
@@ -106,21 +99,27 @@
         });
     }
 
-    function configurarAtualizacaoDataHora() {
+    function configurarDataHora() {
         function atualizar() {
-            try {
-                const agora = new Date();
-                const opcoesData = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                const opcoesHora = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-                
-                if (elementos.dataSpan) {
-                    elementos.dataSpan.textContent = agora.toLocaleDateString('pt-BR', opcoesData);
-                }
-                if (elementos.horaSpan) {
-                    elementos.horaSpan.textContent = agora.toLocaleTimeString('pt-BR', opcoesHora);
-                }
-            } catch (e) {
-                // Silencia erro de data/hora
+            const agora = new Date();
+            const opcoesData = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const opcoesHora = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            };
+            
+            if (elementos.dataSpan) {
+                elementos.dataSpan.textContent = agora.toLocaleDateString('pt-BR', opcoesData);
+            }
+            if (elementos.horaSpan) {
+                elementos.horaSpan.textContent = agora.toLocaleTimeString('pt-BR', opcoesHora);
             }
         }
         
@@ -128,13 +127,69 @@
         setInterval(atualizar, 1000);
     }
 
+    function configurarSelecaoSetores() {
+        if (!elementos.btnAdicionarSetor || !elementos.setorSelector) return;
+
+        // Adicionar setor
+        elementos.btnAdicionarSetor.addEventListener('click', adicionarSetor);
+        
+        // Adicionar com Enter no select
+        elementos.setorSelector.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                adicionarSetor();
+            }
+        });
+    }
+
+    function adicionarSetor() {
+        const select = elementos.setorSelector;
+        if (!select || !select.value) return;
+        
+        const setor = {
+            value: select.value,
+            label: select.options[select.selectedIndex].text
+        };
+        
+        if (!setoresSelecionados.some(s => s.value === setor.value)) {
+            setoresSelecionados.push(setor);
+            atualizarInterfaceSetores();
+        }
+        
+        select.value = '';
+    }
+
+    function removerSetor(valor) {
+        setoresSelecionados = setoresSelecionados.filter(s => s.value !== valor);
+        atualizarInterfaceSetores();
+    }
+
+    function atualizarInterfaceSetores() {
+        if (!elementos.setoresSelecionadosDiv || !elementos.setoresHidden) return;
+        
+        // Atualiza visualização
+        if (setoresSelecionados.length === 0) {
+            elementos.setoresSelecionadosDiv.innerHTML = '<span style="color: var(--cinza-600); font-size: 0.875rem;">Nenhum setor selecionado</span>';
+        } else {
+            elementos.setoresSelecionadosDiv.innerHTML = setoresSelecionados.map(setor => `
+                <span class="tag-setor">
+                    ${setor.label}
+                    <button type="button" onclick="window.removerSetor('${setor.value}')" title="Remover">×</button>
+                </span>
+            `).join('');
+        }
+        
+        // Atualiza campo hidden
+        elementos.setoresHidden.value = JSON.stringify(setoresSelecionados.map(s => s.value));
+        
+        // Expõe função global para remoção
+        window.removerSetor = removerSetor;
+    }
+
     function validarCPF(cpf) {
         cpf = cpf.replace(/\D/g, '');
-        
         if (cpf.length !== 11) return false;
         if (/^(\d)\1+$/.test(cpf)) return false;
-        
-        // Validação simplificada (para não travar)
         return true;
     }
 
@@ -142,35 +197,45 @@
         if (!elementos.corpoTabela || !supabaseClient) return;
         
         try {
-            elementos.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">⏳ Carregando...</td></tr>';
-            
             const { data, error } = await supabaseClient
                 .from('visitantes')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(15);
+                .limit(20);
 
             if (error) throw error;
 
             if (data && data.length > 0) {
                 elementos.corpoTabela.innerHTML = data.map(item => {
                     const dataVisita = new Date(item.created_at);
+                    let setores = [];
+                    
+                    try {
+                        setores = JSON.parse(item.setor);
+                    } catch {
+                        setores = [item.setor];
+                    }
+                    
+                    const setoresHtml = Array.isArray(setores) 
+                        ? setores.map(s => `<span class="setor-badge">${s}</span>`).join('')
+                        : `<span class="setor-badge">${item.setor}</span>`;
+                    
                     return `
                         <tr>
-                            <td><strong>${dataVisita.toLocaleDateString('pt-BR')}</strong><br><small>${dataVisita.toLocaleTimeString('pt-BR')}</small></td>
+                            <td>${dataVisita.toLocaleDateString('pt-BR')}<br><small>${dataVisita.toLocaleTimeString('pt-BR')}</small></td>
                             <td><strong>${item.nome}</strong></td>
                             <td>${item.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</td>
-                            <td><span style="background: #B0C4DE; padding: 4px 8px; border-radius: 20px;">${item.setor}</span></td>
+                            <td><div class="setores-list">${setoresHtml}</div></td>
                             <td>${item.observacao || '-'}</td>
                         </tr>
                     `;
                 }).join('');
             } else {
-                elementos.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">📭 Nenhum registro encontrado</td></tr>';
+                elementos.corpoTabela.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Nenhum registro encontrado</td></tr>';
             }
         } catch (error) {
             console.error('Erro ao carregar:', error);
-            elementos.corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #dc3545;">❌ Erro: ${error.message}</td></tr>`;
+            elementos.corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #DC2626;">Erro ao carregar registros</td></tr>`;
         }
     }
 
@@ -203,28 +268,33 @@
             const dados = {
                 nome: elementos.nomeInput ? elementos.nomeInput.value.trim().toUpperCase() : '',
                 cpf: elementos.cpfInput ? elementos.cpfInput.value.replace(/\D/g, '') : '',
-                setor: elementos.setorSelect ? elementos.setorSelect.value : '',
+                documento: elementos.documentoInput ? elementos.documentoInput.value.trim() || null : null,
+                setor: elementos.setoresHidden ? elementos.setoresHidden.value : '[]',
                 observacao: elementos.observacaoInput ? elementos.observacaoInput.value.trim() || null : null
             };
             
             try {
                 // Validações
-                if (!dados.nome) throw new Error('Digite o nome');
+                if (!dados.nome) throw new Error('Digite o nome do visitante');
                 if (!dados.cpf) throw new Error('Digite o CPF');
                 if (!validarCPF(dados.cpf)) throw new Error('CPF inválido');
-                if (!dados.setor) throw new Error('Selecione o setor');
                 
-                // Insere
+                const setoresArray = JSON.parse(dados.setor);
+                if (setoresArray.length === 0) throw new Error('Selecione pelo menos um setor');
+                
+                // Insere no banco
                 const { error } = await supabaseClient
                     .from('visitantes')
                     .insert([dados]);
 
                 if (error) throw error;
                 
-                mostrarMensagem(`✅ Registro de ${dados.nome} realizado!`, 'sucesso');
+                mostrarMensagem(`Registro de ${dados.nome} realizado com sucesso`, 'sucesso');
                 
                 // Limpa formulário
                 elementos.form.reset();
+                setoresSelecionados = [];
+                atualizarInterfaceSetores();
                 if (elementos.nomeInput) elementos.nomeInput.focus();
                 
                 // Recarrega lista
@@ -232,7 +302,7 @@
                 
             } catch (error) {
                 console.error('Erro:', error);
-                mostrarMensagem(`❌ ${error.message}`, 'erro');
+                mostrarMensagem(error.message, 'erro');
             } finally {
                 // Restaura botão
                 if (elementos.btnSalvar) elementos.btnSalvar.disabled = false;
@@ -240,44 +310,6 @@
                 if (elementos.btnLoader) elementos.btnLoader.style.display = 'none';
             }
         });
-    }
-
-    function configurarAtalhosTeclado() {
-        if (elementos.nomeInput) {
-            elementos.nomeInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (elementos.cpfInput) elementos.cpfInput.focus();
-                }
-            });
-        }
-        
-        if (elementos.cpfInput) {
-            elementos.cpfInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && elementos.cpfInput.value.replace(/\D/g, '').length === 11) {
-                    e.preventDefault();
-                    if (elementos.setorSelect) elementos.setorSelect.focus();
-                }
-            });
-        }
-        
-        if (elementos.setorSelect) {
-            elementos.setorSelect.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && elementos.setorSelect.value) {
-                    e.preventDefault();
-                    if (elementos.observacaoInput) elementos.observacaoInput.focus();
-                }
-            });
-        }
-        
-        if (elementos.observacaoInput) {
-            elementos.observacaoInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (elementos.btnSalvar) elementos.btnSalvar.click();
-                }
-            });
-        }
     }
 
     // Recarrega registros a cada 30 segundos
