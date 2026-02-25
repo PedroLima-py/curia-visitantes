@@ -7,16 +7,16 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
             <div class="logo-container">
-                <img src="brasao.png" alt="Cúria Metropolitana de Brasília" class="logo" onerror="this.style.display='none'; this.parentElement.style.display='none';">
+                <img src="brasao.png" alt="Arquidiocese de Brasília" class="logo" onerror="this.style.display='none'; this.parentElement.style.display='none';">
             </div>
             <h1>Cúria Metropolitana de Brasília</h1>
-            <p class="subtitle">Arquidiocese de Nossa Senhora Aparecida</p>
+            <p class="subtitle">Arquidiocese de Brasília</p>
         </header>
 
         <main>
@@ -33,38 +33,54 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="setor">SETOR DE DESTINO *</label>
-                        <select id="setor" name="setor" required class="select-setores">
-                            <option value="">Selecione um setor</option>
-                            <optgroup label="GABINETE E ADMINISTRAÇÃO">
-                                <option value="Gabinete Episcopal">🏛️ Gabinete Episcopal</option>
-                                <option value="Chancelaria">📜 Chancelaria</option>
-                                <option value="Administração">📊 Administração</option>
-                                <option value="Coordenação de Pastoral">🙏 Coordenação de Pastoral</option>
-                            </optgroup>
-                            <optgroup label="FINANCEIRO">
-                                <option value="Contabilidade">💰 Contabilidade</option>
-                                <option value="Tesouraria">💵 Tesouraria</option>
-                                <option value="Economato">🛒 Economato</option>
-                                <option value="Patrimônio">🏢 Patrimônio</option>
-                            </optgroup>
-                            <optgroup label="JURÍDICO E TRIBUNAL">
-                                <option value="Tribunal Eclesiástico">⚖️ Tribunal Eclesiástico</option>
-                                <option value="Jurídico (COVAC)">📋 Jurídico (COVAC)</option>
-                            </optgroup>
-                            <optgroup label="TECNOLOGIA E COMUNICAÇÃO">
-                                <option value="Tecnologia da Informação">💻 Tecnologia da Informação</option>
-                                <option value="Comunicação/Imprensa">📺 Comunicação/Imprensa</option>
-                            </optgroup>
-                            <optgroup label="RECURSOS HUMANOS">
-                                <option value="Gestão de Pessoas">👥 Gestão de Pessoas</option>
-                                <option value="Secretaria dos MESCE">📝 Secretaria dos MESCE</option>
-                            </optgroup>
-                            <optgroup label="INFRAESTRUTURA">
-                                <option value="Infraestrutura">🔧 Infraestrutura</option>
-                                <option value="Banheiro">🚽 Banheiro</option>
-                            </optgroup>
-                        </select>
+                        <label for="documento">DOCUMENTO (opcional)</label>
+                        <input type="text" id="documento" name="documento" placeholder="RG / CNH / Passaporte" autocomplete="off">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>SETORES DE DESTINO *</label>
+                        <div class="setores-multiplos-container">
+                            <div class="setores-selecionados" id="setoresSelecionados">
+                                <!-- Setores selecionados aparecerão aqui -->
+                            </div>
+                            
+                            <div class="setores-selector">
+                                <select id="setorSelector" class="setor-multiplo-select">
+                                    <option value="">Adicionar setor...</option>
+                                    <optgroup label="GABINETE E ADMINISTRAÇÃO">
+                                        <option value="Gabinete Episcopal">Gabinete Episcopal</option>
+                                        <option value="Chancelaria">Chancelaria</option>
+                                        <option value="Administração">Administração</option>
+                                        <option value="Coordenação de Pastoral">Coordenação de Pastoral</option>
+                                    </optgroup>
+                                    <optgroup label="FINANCEIRO">
+                                        <option value="Contabilidade">Contabilidade</option>
+                                        <option value="Tesouraria">Tesouraria</option>
+                                        <option value="Economato">Economato</option>
+                                        <option value="Patrimônio">Patrimônio</option>
+                                    </optgroup>
+                                    <optgroup label="JURÍDICO E TRIBUNAL">
+                                        <option value="Tribunal Eclesiástico">Tribunal Eclesiástico</option>
+                                        <option value="Jurídico (COVAC)">Jurídico (COVAC)</option>
+                                    </optgroup>
+                                    <optgroup label="TECNOLOGIA E COMUNICAÇÃO">
+                                        <option value="Tecnologia da Informação">Tecnologia da Informação</option>
+                                        <option value="Comunicação/Imprensa">Comunicação/Imprensa</option>
+                                    </optgroup>
+                                    <optgroup label="RECURSOS HUMANOS">
+                                        <option value="Gestão de Pessoas">Gestão de Pessoas</option>
+                                        <option value="Secretaria dos MESCE">Secretaria dos MESCE</option>
+                                    </optgroup>
+                                    <optgroup label="INFRAESTRUTURA">
+                                        <option value="Infraestrutura">Infraestrutura</option>
+                                        <option value="Banheiro">Banheiro</option>
+                                    </optgroup>
+                                </select>
+                                <button type="button" id="btnAdicionarSetor" class="btn-adicionar">+ Adicionar</button>
+                            </div>
+                            <input type="hidden" id="setores" name="setores" required>
+                            <small class="campo-obrigatorio">Selecione pelo menos um setor</small>
+                        </div>
                     </div>
 
                     <div class="form-group full-width">
@@ -73,18 +89,13 @@
                     </div>
                 </div>
 
-                <!-- Visualização alternativa em cards (opcional) -->
-                <div class="setores-grid" id="setoresCards" style="display: none;">
-                    <!-- Os cards serão gerados via JavaScript -->
-                </div>
-
                 <div class="datetime-display">
                     <span id="dataAtual"></span> - <span id="horaAtual"></span>
                 </div>
 
                 <button type="submit" id="btnSalvar">
-                    <span class="btn-text">📝 REGISTRAR ENTRADA</span>
-                    <span class="btn-loader" style="display: none;">⏳ REGISTRANDO...</span>
+                    <span class="btn-text">REGISTRAR ENTRADA</span>
+                    <span class="btn-loader" style="display: none;">REGISTRANDO...</span>
                 </button>
             </form>
 
@@ -99,7 +110,7 @@
                                 <th>Data/Hora</th>
                                 <th>Nome</th>
                                 <th>CPF</th>
-                                <th>Setor</th>
+                                <th>Setores</th>
                                 <th>Observação</th>
                             </tr>
                         </thead>
