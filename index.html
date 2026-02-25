@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cúria Metropolitana de Brasília - Sistema de Registro Rápido</title>
+    <title>Cúria Metropolitana de Brasília - Registro de Visitantes</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,31 +16,25 @@
                 <img src="brasao.png" alt="Arquidiocese de Brasília" class="logo" onerror="this.style.display='none'; this.parentElement.style.display='none';">
             </div>
             <h1>Cúria Metropolitana de Brasília</h1>
-            <p class="subtitle">Arquidiocese de Brasília - Sistema de Registro Rápido</p>
+            <p class="subtitle">Arquidiocese de Brasília</p>
         </header>
 
         <main>
-            <!-- BARRA DE BUSCA RÁPIDA -->
+            <!-- BARRA DE BUSCA RÁPIDA (OPCIONAL) -->
             <div class="busca-rapida">
-                <h2>Buscar Visitante</h2>
-                <div class="busca-container">
-                    <div class="busca-input-group">
-                        <input type="text" id="buscaRapida" placeholder="Digite nome ou CPF para buscar..." autocomplete="off">
-                        <button type="button" id="btnBuscarRapido" class="btn-busca">🔍 Buscar</button>
-                        <button type="button" id="btnLimparBusca" class="btn-limpar-busca">🗑️ Limpar</button>
-                    </div>
-                    <div id="resultadoBusca" class="resultado-busca" style="display: none;">
-                        <!-- Resultados da busca aparecerão aqui -->
-                    </div>
+                <div class="busca-wrapper">
+                    <input type="text" id="buscaRapida" placeholder="Buscar visitante por nome ou CPF..." autocomplete="off">
+                    <button type="button" id="btnBuscar" class="btn-busca">🔍</button>
                 </div>
+                <div id="resultadoBusca" class="resultado-busca"></div>
             </div>
 
-            <!-- FORMULÁRIO DE CADASTRO RÁPIDO -->
+            <!-- FORMULÁRIO DE CADASTRO -->
             <form id="formCadastro">
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <label for="nome">NOME COMPLETO *</label>
-                        <input type="text" id="nome" name="nome" required placeholder="Digite o nome completo do visitante" autocomplete="off">
+                        <input type="text" id="nome" name="nome" required placeholder="Digite o nome completo" autocomplete="off">
                     </div>
 
                     <div class="form-group">
@@ -50,13 +44,12 @@
 
                     <div class="form-group full-width">
                         <label>SETORES DE DESTINO *</label>
-                        <div class="setores-multiplos-container">
+                        <div class="setores-container">
                             <div class="setores-selecionados" id="setoresSelecionados">
-                                <span style="color: var(--cinza-600); font-size: 0.875rem;">Nenhum setor selecionado</span>
+                                <span class="placeholder">Nenhum setor selecionado</span>
                             </div>
-                            
                             <div class="setores-selector">
-                                <select id="setorSelector" class="setor-multiplo-select">
+                                <select id="setorSelector">
                                     <option value="">Adicionar setor...</option>
                                     <optgroup label="GABINETE E ADMINISTRAÇÃO">
                                         <option value="Gabinete Episcopal">Gabinete Episcopal</option>
@@ -87,21 +80,20 @@
                                         <option value="Banheiro">Banheiro</option>
                                     </optgroup>
                                 </select>
-                                <button type="button" id="btnAdicionarSetor" class="btn-adicionar">+ Adicionar</button>
+                                <button type="button" id="btnAdicionarSetor" class="btn-adicionar">+</button>
                             </div>
                             <input type="hidden" id="setores" name="setores" required>
-                            <small class="campo-obrigatorio">Selecione pelo menos um setor</small>
                         </div>
                     </div>
 
                     <div class="form-group full-width">
                         <label for="observacao">OBSERVAÇÕES</label>
-                        <textarea id="observacao" name="observacao" rows="3" placeholder="Cidade de origem, motivo da visita, observações relevantes..."></textarea>
+                        <textarea id="observacao" name="observacao" rows="2" placeholder="Cidade, motivo da visita, observações..."></textarea>
                     </div>
                 </div>
 
                 <div class="datetime-display">
-                    <span id="dataAtual"></span> - <span id="horaAtual"></span>
+                    <span id="dataAtual"></span> — <span id="horaAtual"></span>
                 </div>
 
                 <button type="submit" id="btnSalvar">
@@ -112,22 +104,22 @@
 
             <div id="mensagem" class="mensagem" style="display: none;"></div>
 
-            <!-- ÚLTIMOS REGISTROS (apenas para referência rápida) -->
+            <!-- ÚLTIMOS REGISTROS -->
             <section class="ultimos-registros">
-                <h2>Últimos 10 Registros</h2>
+                <h2>Últimos registros</h2>
                 <div class="table-responsive">
-                    <table id="tabelaRegistros">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Data/Hora</th>
                                 <th>Nome</th>
                                 <th>CPF</th>
                                 <th>Setores</th>
-                                <th>Ação</th>
+                                <th>Observação</th>
                             </tr>
                         </thead>
                         <tbody id="corpoTabela">
-                            <tr><td colspan="5" style="text-align: center;">Carregando registros...</td></tr>
+                            <tr><td colspan="5">Carregando...</td></tr>
                         </tbody>
                     </table>
                 </div>
