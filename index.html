@@ -20,6 +20,7 @@
         </header>
 
         <main>
+            <!-- FORMULÁRIO DE CADASTRO -->
             <form id="formCadastro">
                 <div class="form-grid">
                     <div class="form-group full-width">
@@ -41,7 +42,7 @@
                         <label>SETORES DE DESTINO *</label>
                         <div class="setores-multiplos-container">
                             <div class="setores-selecionados" id="setoresSelecionados">
-                                <!-- Setores selecionados aparecerão aqui -->
+                                <span style="color: var(--cinza-600); font-size: 0.875rem;">Nenhum setor selecionado</span>
                             </div>
                             
                             <div class="setores-selector">
@@ -101,6 +102,104 @@
 
             <div id="mensagem" class="mensagem" style="display: none;"></div>
 
+            <!-- SEÇÃO DE CONSULTA -->
+            <section class="consulta-section">
+                <h2>CONSULTAR VISITANTES</h2>
+                
+                <div class="consulta-filtros">
+                    <div class="filtros-grid">
+                        <div class="filtro-group">
+                            <label for="buscaNome">Nome</label>
+                            <input type="text" id="buscaNome" placeholder="Digite parte do nome...">
+                        </div>
+                        
+                        <div class="filtro-group">
+                            <label for="buscaCPF">CPF</label>
+                            <input type="text" id="buscaCPF" placeholder="000.000.000-00" maxlength="14">
+                        </div>
+                        
+                        <div class="filtro-group">
+                            <label for="buscaSetor">Setor</label>
+                            <select id="buscaSetor">
+                                <option value="">Todos os setores</option>
+                                <optgroup label="GABINETE E ADMINISTRAÇÃO">
+                                    <option value="Gabinete Episcopal">Gabinete Episcopal</option>
+                                    <option value="Chancelaria">Chancelaria</option>
+                                    <option value="Administração">Administração</option>
+                                    <option value="Coordenação de Pastoral">Coordenação de Pastoral</option>
+                                </optgroup>
+                                <optgroup label="FINANCEIRO">
+                                    <option value="Contabilidade">Contabilidade</option>
+                                    <option value="Tesouraria">Tesouraria</option>
+                                    <option value="Economato">Economato</option>
+                                    <option value="Patrimônio">Patrimônio</option>
+                                </optgroup>
+                                <optgroup label="JURÍDICO E TRIBUNAL">
+                                    <option value="Tribunal Eclesiástico">Tribunal Eclesiástico</option>
+                                    <option value="Jurídico (COVAC)">Jurídico (COVAC)</option>
+                                </optgroup>
+                                <optgroup label="TECNOLOGIA E COMUNICAÇÃO">
+                                    <option value="Tecnologia da Informação">Tecnologia da Informação</option>
+                                    <option value="Comunicação/Imprensa">Comunicação/Imprensa</option>
+                                </optgroup>
+                                <optgroup label="RECURSOS HUMANOS">
+                                    <option value="Gestão de Pessoas">Gestão de Pessoas</option>
+                                    <option value="Secretaria dos MESCE">Secretaria dos MESCE</option>
+                                </optgroup>
+                                <optgroup label="INFRAESTRUTURA">
+                                    <option value="Infraestrutura">Infraestrutura</option>
+                                    <option value="Banheiro">Banheiro</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <div class="filtro-group">
+                            <label for="buscaDataInicio">Data Início</label>
+                            <input type="date" id="buscaDataInicio">
+                        </div>
+                        
+                        <div class="filtro-group">
+                            <label for="buscaDataFim">Data Fim</label>
+                            <input type="date" id="buscaDataFim">
+                        </div>
+                    </div>
+                    
+                    <div class="filtros-acoes">
+                        <button type="button" id="btnBuscar" class="btn-buscar">🔍 Buscar</button>
+                        <button type="button" id="btnLimparFiltros" class="btn-limpar">Limpar</button>
+                        <button type="button" id="btnExportar" class="btn-exportar">📥 Exportar CSV</button>
+                    </div>
+                </div>
+                
+                <div class="consulta-resultados">
+                    <div class="resultados-header">
+                        <h3>Resultados da Consulta</h3>
+                        <span id="totalRegistros" class="total-registros">0 registros encontrados</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="tabelaConsulta">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Nome</th>
+                                    <th>CPF</th>
+                                    <th>Documento</th>
+                                    <th>Setores</th>
+                                    <th>Observação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaConsulta">
+                                <tr><td colspan="6" style="text-align: center; padding: 40px;">Use os filtros acima para buscar registros</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="resultados-paginacao" id="paginacao"></div>
+                </div>
+            </section>
+
+            <!-- ÚLTIMOS REGISTROS -->
             <section class="ultimos-registros">
                 <h2>Últimos Registros</h2>
                 <div class="table-responsive">
